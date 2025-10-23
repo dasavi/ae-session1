@@ -37,6 +37,26 @@ const server = setupServer(
         created_at: new Date().toISOString(),
       })
     );
+  }),
+  
+  // DELETE /api/items/:id handler
+  rest.delete('/api/items/:id', (req, res, ctx) => {
+    const { id } = req.params;
+    
+    if (id === '1' || id === '2') {
+      return res(
+        ctx.status(200),
+        ctx.json({
+          message: 'Item deleted successfully',
+          id: parseInt(id)
+        })
+      );
+    }
+    
+    return res(
+      ctx.status(404),
+      ctx.json({ error: 'Item not found' })
+    );
   })
 );
 
@@ -50,7 +70,7 @@ describe('App Component', () => {
     await act(async () => {
       render(<App />);
     });
-    expect(screen.getByText('React Frontend with Node Backend')).toBeInTheDocument();
+    expect(screen.getByText('Hello World')).toBeInTheDocument();
     expect(screen.getByText('Connected to in-memory database')).toBeInTheDocument();
   });
 
@@ -132,5 +152,33 @@ describe('App Component', () => {
     await waitFor(() => {
       expect(screen.getByText('No items found. Add some!')).toBeInTheDocument();
     });
+  });
+
+  test('deletes an item', async () => {
+    const user = userEvent.setup();
+    
+    await act(async () => {
+      render(<App />);
+    });
+    
+    // Wait for items to load
+    await waitFor(() => {
+      expect(screen.getByText('Test Item 1')).toBeInTheDocument();
+      expect(screen.getByText('Test Item 2')).toBeInTheDocument();
+    });
+    
+    // Find and click the first delete button
+    const deleteButtons = screen.getAllByText('Delete');
+    await act(async () => {
+      await user.click(deleteButtons[0]);
+    });
+    
+    // Wait for the item to be removed from the UI
+    await waitFor(() => {
+      expect(screen.queryByText('Test Item 1')).not.toBeInTheDocument();
+    });
+    
+    // Check that the other item is still there
+    expect(screen.getByText('Test Item 2')).toBeInTheDocument();
   });
 });
